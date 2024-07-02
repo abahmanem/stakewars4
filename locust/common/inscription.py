@@ -1,38 +1,46 @@
 import logging
-import pathlib
+from concurrent import futures
 import random
+import string
 import sys
+import pathlib
+import typing
+from locust import events
 
 sys.path.append(str(pathlib.Path(__file__).resolve().parents[4] / 'lib'))
 
-from configured_logger import new_logger
-from locust import constant_throughput, task
-from common.base import NearUser
-from common.inscription import MintInscription
-from common.base import Account, Deploy, NearNodeProxy, NearUser, FunctionCall, INIT_DONE, Transaction
-from locust import events
-logger = new_logger(level=logging.WARN)
+import key
+from common.base import Account, Deploy, NearNodeProxy, NearUser, FunctionCall, INIT_DONE
 
 
-class MintInscriptionUser(NearUser):
+class MintInscription(FunctionCall):
 
-    @task
-    def mint(self):
-        self.send_tx(MintInscription(self.account, "abahmane-meme", amt=100), locust_name="Mint Inscription")
+    def __init__(self,
+                 sender: Account,
+                 tick,
+                 amt):
+        # Attach exactly 1 yoctoNEAR according to NEP-141 to avoid calls from restricted access keys
+        super().__init__(sender, "inscription.near", "inscribe", balance=0)
+        self.sender = sender,
+        self.tick = tick,
+        self.amt = amt
 
-    def on_start(self):
-        #makes a user
-        super().on_start()
-        self.account = self.environment.account
+    def args(self) -> dict:
+        return {
+            "p": "nrc-20",
+            "op": "mint",
+            "tick": tick,
+            "amt": str(int(amt))
+        }
+
+    def sender_account(self) -> Account:
+        return self.sender
 
     @events.init.add_listener
     def on_locust_init(environment, **kwargs):
-        INIT_DONE.wait()
-        node = NearNodeProxy(environment)
-        funding_account = NearUser.funding_account
-        parent_id = funding_account.key.account_id
-        print("Funding Account - ",parent_id)
-
-        print("I am in INIT")
-        funding_account.refresh_nonce(node.node)
-        environment.account = Account(parent_id)
+       INIT_DONE.wait()
+       node = NearNodeProxy(environment)
+       funding_account = NearUser.funding_account
+       parent_id = funding_account.key.account_id
+       run_id = environment.parsed_options.run_id
+       funding_account.refresh_nonce(node.node)
