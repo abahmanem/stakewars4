@@ -23,7 +23,7 @@ class MintInscriptionUser(NearUser):
     def on_start(self):
         #makes a user
         super().on_start()
-        self.account = self.environment.account
+        #self.account = self.environment.account
 
     @events.init.add_listener
     def on_locust_init(environment, **kwargs):
@@ -31,7 +31,7 @@ class MintInscriptionUser(NearUser):
         node = NearNodeProxy(environment)
         funding_account = NearUser.funding_account
         parent_id = funding_account.key.account_id
-        print("Funding Account - ",parent_id)
-    
+
+        print("I am in INIT")
         funding_account.refresh_nonce(node.node)
-        environment.account = Account(parent_id)
+        #environment.account = Account(parent_id)
