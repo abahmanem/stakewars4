@@ -21,16 +21,16 @@ class MintInscription(FunctionCall):
                  amt):
         # Attach exactly 1 yoctoNEAR according to NEP-141 to avoid calls from restricted access keys
         super().__init__(sender, "inscription.near", "inscribe", balance=0)
-        self.sender = sender,
-        self.tick = tick,
+        self.sender = sender
+        self.tick = tick
         self.amt = amt
 
     def args(self) -> dict:
         return {
             "p": "nrc-20",
             "op": "mint",
-            "tick": tick,
-            "amt": str(int(amt))
+            "tick": self.tick,
+            "amt": str(int(self.amt))
         }
 
     def sender_account(self) -> Account:
